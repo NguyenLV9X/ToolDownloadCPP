@@ -21,9 +21,15 @@
     <ClCompile Include="DownloadManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Download.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DownloadManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Download.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -15,7 +15,7 @@ public:
 	DownloadManager(const DownloadManager&) = delete;
 	DownloadManager& operator=(const DownloadManager&) = delete;
 	~DownloadManager();
-	int is_valid(string url, int connection_count = 1, int thread_count = 1);
+	int set_valid(string url, int connection_count = 1, int thread_count = 1);
 	void app_main();
 
 };
