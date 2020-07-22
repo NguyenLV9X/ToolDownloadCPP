@@ -6,6 +6,8 @@ class Download
 private:
 	
 	double douFilesizeSV;
+	double douFilesizeLC;
+	string strFilename;
 
 public:
 
@@ -16,5 +18,6 @@ public:
 
 	void initialize();
 	bool check_size_file_sv(string url);
-
+	bool check_size_file_lc();
+	bool set_name_file(string url);
 };

@@ -1,8 +1,9 @@
-#include "Download.h"
+#include"Download.h"
 #include"curl/curl.h"
+#include<fstream>
 
 Download::Download():
-	douFilesizeSV(0.0)
+	douFilesizeSV(0.0), douFilesizeLC(0.0)
 {
 }
 
@@ -27,5 +28,25 @@ bool Download::check_size_file_sv(string url)
 	if( douFilesizeSV == -1 )
 		return false;
 
+	return true;
+}
+
+bool Download::check_size_file_lc()
+{
+	streampos begin, end;
+	ifstream filelc(strFilename, ios::binary);
+	begin = filelc.tellg();
+	filelc.seekg(0, ios::end);
+	end = filelc.tellg();
+	filelc.close();
+	douFilesizeLC = end - begin;
+	cout << "size file local:" << douFilesizeLC;
+	return true;
+}
+
+bool Download::set_name_file(string url)
+{
+	size_t found = url.find_last_of("/");
+	strFilename = url.substr(found + 1);
 	return true;
 }
