@@ -1,7 +1,7 @@
 #include"Download.h"
 #include"curl/curl.h"
 #include<fstream>
-#include<string>
+#include<iterator>
 
 void Download::push_one_connection(string url, int connection_count, int numthead)
 {
@@ -12,12 +12,38 @@ void Download::push_one_connection(string url, int connection_count, int numthea
 	list_range = curl_slist_append(list_range, strRange.c_str());
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, list_range);
 
-	std::string data;
+	string data;
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, my_write);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &data);
 	//curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L); //show info
 	curl_easy_perform(curl);
 	curl_easy_cleanup(curl);
+	mapData.insert(pair<int, string>(numthead, data));
+	add_data_in_map_into_file();
+}
+
+bool Download::add_data_in_map_into_file()
+{
+	ofstream filedata;
+	filedata.open(strFilename, ios::app | ios::binary | ios::out);
+	if (!filedata)
+		return false; //File opened in somewhere
+
+	map<int, string>::iterator itr;
+	for (itr = mapData.begin(); itr != mapData.end(); ++itr) 
+	{
+		if (itr->first == inTotalConnectDataIntoFile)
+		{
+			filedata << itr->second;
+			mapData.erase(itr);
+			inTotalConnectDataIntoFile++;
+		}
+		else if (itr->first > inTotalConnectDataIntoFile)
+			break;
+	}
+	filedata.close();
+	
+	return true;
 }
 
 string Download::get_range(int connection_count, int numthead)
@@ -39,7 +65,7 @@ size_t Download::my_write(void* buffer, size_t size, size_t nmemb, void* param)
 }
 
 Download::Download():
-	douFilesizeSV(0.0), douFilesizeLC(0.0)
+	douFilesizeSV(0.0), douFilesizeLC(0.0), inTotalConnectDataIntoFile(0)
 {
 }
 
@@ -54,6 +80,7 @@ void Download::initialize()
 
 bool Download::check_size_file_sv(string url)
 {
+	set_name_file(url);
 	CURL* curl = curl_easy_init();
 	curl_easy_setopt(curl, CURLOPT_URL, url);
 	curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);
