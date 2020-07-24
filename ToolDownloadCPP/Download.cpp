@@ -3,32 +3,29 @@
 #include<fstream>
 #include<iterator>
 
-void Download::push_one_connection(string url, int connection_count, int numthead)
+strData Download::push_one_connection(string url, int connection_count, int numthread)
 {
+	strData datathread;
+	datathread.numthread = numthread;
 	struct curl_slist* list_range = NULL;
 	CURL* curl = curl_easy_init();
 	curl_easy_setopt(curl, CURLOPT_URL, url);
-	string strRange = get_range(connection_count, numthead);
+	string strRange = get_range(connection_count, numthread);
 	list_range = curl_slist_append(list_range, strRange.c_str());
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, list_range);
 
-	string data;
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, my_write);
-	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &data);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &datathread.Data);
 	//curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L); //show info
 	curl_easy_perform(curl);
 	curl_easy_cleanup(curl);
-	mapData.insert(pair<int, string>(numthead, data));
-	add_data_in_map_into_file();
+	return datathread;
 }
 
 bool Download::add_data_in_map_into_file()
 {
 	ofstream filedata;
 	filedata.open(strFilename, ios::app | ios::binary | ios::out);
-	if (!filedata)
-		return false; //File opened in somewhere
-
 	map<int, string>::iterator itr;
 	for (itr = mapData.begin(); itr != mapData.end(); ++itr) 
 	{
@@ -48,10 +45,12 @@ bool Download::add_data_in_map_into_file()
 
 string Download::get_range(int connection_count, int numthead)
 {
-	int inStart = ((douFilesizeSV - douFilesizeLC) / connection_count * numthead) + numthead;
-	int inEnd = inStart + (douFilesizeSV - douFilesizeLC) / connection_count;
+	int inStart = (((int)douFilesizeSV - (int)douFilesizeLC) / connection_count * numthead) + numthead;
+	int inEnd = inStart + ((int)douFilesizeSV - (int)douFilesizeLC) / connection_count;
 	string strStart = to_string(inStart);
 	string strEnd = to_string(inEnd);
+	if (connection_count == numthead + 1)
+		strEnd = to_string((int)douFilesizeSV);
 	string strRange = "Range: bytes=" + strStart + "-" + strEnd;
 	return strRange;
 }
@@ -65,7 +64,7 @@ size_t Download::my_write(void* buffer, size_t size, size_t nmemb, void* param)
 }
 
 Download::Download():
-	douFilesizeSV(0.0), douFilesizeLC(0.0), inTotalConnectDataIntoFile(0)
+	douFilesizeSV(0.0), douFilesizeLC(0.0), inTotalConnectDataIntoFile(0), inTotalThreadsRunning(0)
 {
 }
 
@@ -106,9 +105,70 @@ bool Download::check_size_file_lc()
 	return true;
 }
 
+void Download::start_download(string url, int Connection_count, int Thread_count)
+{
+	for (int i = 0; i < Connection_count; i++)
+	{
+		while (1)
+		{
+			if (!check_threads_running(Thread_count))
+			{
+				check_data_finished(Connection_count);
+				break;
+			}
+		}
+
+		listThreads.push_back(async(launch::async, &Download::push_one_connection, this, url, Connection_count, i));
+	}
+	while (1)
+	{
+		if (!check_data_finished(Connection_count))
+			break;
+	}
+}
+
 bool Download::set_name_file(string url)
 {
 	size_t found = url.find_last_of("/");
 	strFilename = url.substr(found + 1);
+	return true;
+}
+
+bool Download::check_threads_running(int Thread_count)
+{
+	if (Thread_count > inTotalThreadsRunning)
+	{
+		inTotalThreadsRunning++;
+		return false;
+	}
+	else
+	{
+		list<future<strData>>::iterator itr;
+		chrono::milliseconds span(0);
+		for (itr = listThreads.begin(); itr != listThreads.end(); ++itr)
+		{
+			if (itr->wait_for(span) == future_status::ready)
+				return false;
+		}
+	}
+	return true;
+}
+
+bool Download::check_data_finished(int Connection_count)
+{
+	list<future<strData>>::iterator itr;
+	chrono::milliseconds span(0);
+	for (itr = listThreads.begin(); itr != listThreads.end(); ++itr)
+	{
+		if (itr->wait_for(span) == future_status::ready)
+		{
+			strData datathread = itr->get();
+			mapData.insert(pair<int, string>(datathread.numthread, datathread.Data));
+			listThreads.erase(itr);
+			add_data_in_map_into_file();
+		}
+	}
+	if (inTotalConnectDataIntoFile == Connection_count)
+		return false;
 	return true;
 }
