@@ -3,6 +3,7 @@
 #include<fstream>
 #include<iterator>
 #include<filesystem>
+#include<regex>
 
 strData Download::push_one_connection(string url, int connection_count, int numthread)
 {
@@ -26,7 +27,7 @@ strData Download::push_one_connection(string url, int connection_count, int numt
 bool Download::add_data_in_map_into_file()
 {
 	ofstream filedata;
-	filedata.open(strFilename, ios::app | ios::binary | ios::out);
+	filedata.open(strOutput, ios::app | ios::binary | ios::out);
 	map<int, string>::iterator itr;
 	for (itr = mapData.begin(); itr != mapData.end(); ++itr) 
 	{
@@ -96,10 +97,11 @@ bool Download::check_size_file_sv(string url)
 	return true;
 }
 
-bool Download::check_size_file_lc()
+bool Download::check_size_file_lc(string link)
 {
+	set_link_output(link);
 	streampos begin, end;
-	ifstream filelc(strFilename, ios::binary);
+	ifstream filelc(strOutput, ios::binary);
 	begin = filelc.tellg();
 	filelc.seekg(0, ios::end);
 	end = filelc.tellg();
@@ -107,7 +109,7 @@ bool Download::check_size_file_lc()
 	douFilesizeLC = end - begin;
 	if (douFilesizeLC >= douFilesizeSV)
 	{
-		remove(strFilename.c_str());
+		remove(strOutput.c_str());
 		douFilesizeLC = 0;
 	}
 	return true;
@@ -146,6 +148,12 @@ bool Download::set_name_file(string url)
 {
 	size_t found = url.find_last_of("/");
 	strFilename = url.substr(found + 1);
+	return true;
+}
+
+bool Download::set_link_output(string link)
+{
+	strOutput = link;
 	return true;
 }
 
