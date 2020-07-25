@@ -14,6 +14,7 @@ struct strData
 class Download
 {
 private:
+
 	list<future<strData>> listThreads;
 	map<int, string> mapData;
 	double douFilesizeSV;
@@ -40,4 +41,6 @@ public:
 	bool check_size_file_sv(string url);
 	bool check_size_file_lc();
 	void start_download(string url, int Connection_count, int Thread_count);
+	void finalize();
+
 };

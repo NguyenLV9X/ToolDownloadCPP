@@ -21,4 +21,5 @@ int DownloadManager::set_valid(string url, int connection_count,
 
 void DownloadManager::app_main()
 {
+	return;
 }

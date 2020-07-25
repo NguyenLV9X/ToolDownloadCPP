@@ -2,6 +2,7 @@
 #include"curl/curl.h"
 #include<fstream>
 #include<iterator>
+#include<filesystem>
 
 strData Download::push_one_connection(string url, int connection_count, int numthread)
 {
@@ -46,11 +47,13 @@ bool Download::add_data_in_map_into_file()
 string Download::get_range(int connection_count, int numthead)
 {
 	int inStart = (((int)douFilesizeSV - (int)douFilesizeLC) / connection_count * numthead) + numthead;
+	if (douFilesizeLC >= 0)
+		inStart += (int)douFilesizeLC;
 	int inEnd = inStart + ((int)douFilesizeSV - (int)douFilesizeLC) / connection_count;
 	string strStart = to_string(inStart);
 	string strEnd = to_string(inEnd);
 	if (connection_count == numthead + 1)
-		strEnd = to_string((int)douFilesizeSV);
+		strEnd = to_string((int)douFilesizeSV - 1);
 	string strRange = "Range: bytes=" + strStart + "-" + strEnd;
 	return strRange;
 }
@@ -102,6 +105,11 @@ bool Download::check_size_file_lc()
 	end = filelc.tellg();
 	filelc.close();
 	douFilesizeLC = end - begin;
+	if (douFilesizeLC >= douFilesizeSV)
+	{
+		remove(strFilename.c_str());
+		douFilesizeLC = 0;
+	}
 	return true;
 }
 
@@ -125,6 +133,13 @@ void Download::start_download(string url, int Connection_count, int Thread_count
 		if (!check_data_finished(Connection_count))
 			break;
 	}
+	return;
+}
+
+void Download::finalize()
+{
+	curl_global_cleanup();
+	return;
 }
 
 bool Download::set_name_file(string url)
