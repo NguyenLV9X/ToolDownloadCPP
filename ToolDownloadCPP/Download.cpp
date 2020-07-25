@@ -1,9 +1,18 @@
 #include"Download.h"
-#include"curl/curl.h"
 #include<fstream>
 #include<iterator>
 #include<filesystem>
 #include<regex>
+
+#define CURL_STATICLIB
+#include"curl/curl.h"
+
+#ifdef _DEBUG
+#pragma comment
+#   pragma comment (lib, "curl/libcurl_a_debug.lib")
+#else
+#   pragma comment (lib, "curl/libcurl_a.lib")
+#endif
 
 strData Download::push_one_connection(string url, int connection_count, int numthread)
 {

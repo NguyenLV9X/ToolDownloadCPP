@@ -13,7 +13,7 @@ int main()
 	cin >> connect_count;
 	cout << "--thread-count=";
 	cin >> thread_count;
-	cout << "--output=";
+	cout << "--output="; //The example : D:\\file.ios
 	cin >> out;
 	tool.set_valid(url, out, connect_count, thread_count);
 	tool.app_main();
